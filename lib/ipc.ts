@@ -188,9 +188,9 @@ export class IPCTransport extends EventEmitter {
     }
 
     const socket = this.socket;
-    this.send({}, OPCodes.CLOSE);
     this.socket = null;
     this.buffer = new Uint8Array(0);
+    await socket.write(encode(OPCodes.CLOSE, {})).catch(() => undefined);
     await socket.close();
   }
 

@@ -62,6 +62,7 @@ export class DisplayDuckWidget {
   private readonly state: WritableSignal<DiscordWidgetState>;
   private participants: DiscordParticipant[] = [];
   private readonly participantElements = new Map<string, ParticipantElementRefs>();
+  private readonly renderedParticipants = new Map<string, DiscordParticipant>();
   private readonly dom: DiscordWidgetDomRefs = {
     container: null,
     host: null,
@@ -657,11 +658,15 @@ export class DisplayDuckWidget {
 
       refs.root.remove();
       this.participantElements.delete(id);
+      this.renderedParticipants.delete(id);
     }
 
     this.participants.forEach((participant, index) => {
       const refs = this.participantElements.get(participant.id) ?? this.createParticipantElement(participant.id);
-      this.updateParticipantElement(participant);
+      const previous = this.renderedParticipants.get(participant.id);
+      if (!previous || !this.areParticipantsEqual([previous], [participant])) {
+        this.updateParticipantElement(participant);
+      }
 
       const nodeAtIndex = list.children.item(index);
       if (nodeAtIndex !== refs.root) {
@@ -731,6 +736,7 @@ export class DisplayDuckWidget {
 
     refs.nameWrapper.hidden = !this.showNames();
     refs.name.textContent = this.participantName(participant);
+    this.renderedParticipants.set(participant.id, participant);
   }
 
   private clearParticipantElements(): void {
@@ -738,6 +744,7 @@ export class DisplayDuckWidget {
       refs.root.remove();
     }
     this.participantElements.clear();
+    this.renderedParticipants.clear();
   }
 
   private startSpeakingWatchdog(): void {
