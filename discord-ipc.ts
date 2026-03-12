@@ -50,9 +50,10 @@ const toAvatarUrl = (path: string, hash: string): string | undefined => {
 
 const getDiscordIpcEndpoints = (): string[] => {
   const endpoints: string[] = [];
+  const isWindows = (globalThis.navigator?.platform ?? '').toLowerCase().includes('win');
   for (const build of DISCORD_IPC_BUILDS) {
     for (let index = 0; index < 10; index += 1) {
-      endpoints.push(`\\\\.\\pipe\\${build}-${index}`);
+      endpoints.push(isWindows ? `\\\\.\\pipe\\${build}-${index}` : `${build}-${index}`);
     }
   }
   return endpoints;

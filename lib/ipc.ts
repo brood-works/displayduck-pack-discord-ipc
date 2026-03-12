@@ -61,6 +61,11 @@ const getCandidateEndpoints = (client: Client): string[] => {
   return candidates;
 };
 
+const hasCustomEndpoints = (client: Client): boolean => {
+  return Array.isArray(client.options?.ipcEndpoints)
+    && client.options.ipcEndpoints.some((value) => typeof value === 'string' && value.trim().length > 0);
+};
+
 const getReachableEndpoints = async (client: Client): Promise<string[]> => {
   const candidates = getCandidateEndpoints(client);
   const checks = await Promise.all(
@@ -253,11 +258,16 @@ export class IPCTransport extends EventEmitter {
 
   private async connectInternal(): Promise<void> {
     this.buffer = new Uint8Array(0);
+    const candidateEndpoints = getCandidateEndpoints(this.client);
     const reachableEndpoints = await getReachableEndpoints(this.client);
     const endpoints = reachableEndpoints.length > 0
       ? reachableEndpoints
-      : getCandidateEndpoints(this.client);
+      : (hasCustomEndpoints(this.client) ? candidateEndpoints : []);
     let lastError: unknown = null;
+
+    if (endpoints.length === 0) {
+      throw new Error('Discord IPC endpoint is not available.');
+    }
 
     for (let attempt = 0; attempt < CONNECT_ATTEMPTS; attempt += 1) {
       for (const endpoint of endpoints) {
