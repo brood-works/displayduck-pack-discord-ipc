@@ -1,4 +1,5 @@
-import { ipcTransportEndpointExists, signal, type WritableSignal, type WidgetContext } from '@displayduck/plugin-framework';
+import { signal, type WritableSignal, type WidgetContext } from '@displayduck/base';
+import { ipcTransportEndpointExists } from '@displayduck/ipc';
 import { Client, RPCEvents, type Subscription } from './lib';
 import type {
   DiscordParticipant,

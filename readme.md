@@ -12,7 +12,7 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/brood-works/displayduck-widget-discord-ipc">
+  <a href="https://github.com/brood-works/displayduck-pack-discord-ipc">
     <img src="logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -91,18 +91,18 @@ Don't forget to give the project a star! Thanks again!
 
 ### Contributors:
 
-<a href="https://github.com/brood-works/displayduck-widget-discord-ipc/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=brood-works/displayduck-widget-discord-ipc" />
+<a href="https://github.com/brood-works/displayduck-pack-discord-ipc/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=brood-works/displayduck-pack-discord-ipc" />
 </a>
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-[contributors-shield]: https://img.shields.io/github/contributors/brood-works/displayduck-widget-discord-ipc.svg
-[contributors-url]: https://github.com/brood-works/displayduck-widget-discord-ipc/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/brood-works/displayduck-widget-discord-ipc
-[forks-url]: https://github.com/brood-works/displayduck-widget-discord-ipc/network/members
-[stars-shield]: https://img.shields.io/github/stars/brood-works/displayduck-widget-discord-ipc
+[contributors-shield]: https://img.shields.io/github/contributors/brood-works/displayduck-pack-discord-ipc.svg
+[contributors-url]: https://github.com/brood-works/displayduck-pack-discord-ipc/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/brood-works/displayduck-pack-discord-ipc
+[forks-url]: https://github.com/brood-works/displayduck-pack-discord-ipc/network/members
+[stars-shield]: https://img.shields.io/github/stars/brood-works/displayduck-pack-discord-ipc
 [stars-url]: https://github.com/othneildrew/Best-README-Template/stargazers
-[issues-shield]: https://img.shields.io/github/issues/brood-works/displayduck-widget-discord-ipc
+[issues-shield]: https://img.shields.io/github/issues/brood-works/displayduck-pack-discord-ipc
 [issues-url]: https://github.com/othneildrew/Best-README-Template/issues

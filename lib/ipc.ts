@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import {
   IpcTransport as ProxyIpcTransport,
   ipcTransportEndpointExists,
-} from '@displayduck/plugin-framework';
+} from '@displayduck/ipc';
 import type { Client } from './client';
 import { uuid } from './utils';
 import type { RpcFrame } from './types';

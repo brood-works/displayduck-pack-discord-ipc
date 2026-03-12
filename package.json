@@ -1,5 +1,7 @@
 {
   "devDependencies": {
+    "@displayduck/base": "^0.1.0",
+    "@displayduck/ipc": "^0.1.0",
     "@types/events": "^3.0.3",
     "events": "^3.3.0"
   }
