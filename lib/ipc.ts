@@ -80,24 +80,6 @@ const getReachableEndpoints = async (client: Client): Promise<string[]> => {
     .map((entry) => entry.endpoint);
 };
 
-const findEndpoint = async (tries = 0): Promise<string> => {
-  if (tries > 30) {
-    throw new Error('Could not find endpoint');
-  }
-
-  const endpoint = `http://127.0.0.1:${6463 + (tries % 10)}`;
-
-  try {
-    const response = await fetch(endpoint);
-    if (response.status === 404) {
-      return endpoint;
-    }
-    return await findEndpoint(tries + 1);
-  } catch {
-    return await findEndpoint(tries + 1);
-  }
-};
-
 const concatBytes = (left: Uint8Array, right: Uint8Array): Uint8Array => {
   const merged = new Uint8Array(left.length + right.length);
   merged.set(left, 0);
@@ -234,16 +216,6 @@ export class IPCTransport extends EventEmitter {
       if (op === OPCodes.FRAME) {
         if (!data || typeof data !== 'object') {
           continue;
-        }
-
-        if (data.cmd === 'AUTHORIZE' && data.evt !== 'ERROR') {
-          void findEndpoint()
-            .then((endpoint) => {
-              this.client.endpoint = endpoint;
-            })
-            .catch((error) => {
-              this.client.emit('error', error);
-            });
         }
 
         this.emit('message', data);
