@@ -28,6 +28,9 @@
 > [!WARNING]
 > This widget is built with the help of AI, and may contain bugs.
 
+> [!WARNING]
+> IPC/RPC connetions are currently unstable, expect connection issues, timeouts or other bugs to occur.
+
 ---
 
 ## About
