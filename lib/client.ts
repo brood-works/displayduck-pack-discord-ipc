@@ -83,12 +83,16 @@ export class Client extends EventEmitter {
     { data, query }: { data?: BodyInit; query?: Record<string, string> } = {},
   ): Promise<any> {
     const search = query ? `?${new URLSearchParams(query).toString()}` : '';
+    const headers: Record<string, string> = {};
+
+    if (typeof this.accessToken === 'string' && this.accessToken.trim().length > 0) {
+      headers.Authorization = `Bearer ${this.accessToken}`;
+    }
+
     return fetch(`${this.endpoint}${path}${search}`, {
       method,
       body: data,
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`,
-      },
+      headers,
     }).then(async (response) => {
       const body = await response.json();
 
