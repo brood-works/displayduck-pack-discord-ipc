@@ -1720,6 +1720,7 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
     });
   }
   afterRender() {
+    this.ctx.mount.style.display = "";
     this.cacheDom();
     this.reconcileParticipants();
     this.render();
@@ -1913,7 +1914,8 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
     try {
       await client.authenticate({
         clientId,
-        accessToken: token.accessToken
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken
       });
       this.persistClientTokens(clientId, client);
       return true;
@@ -1930,13 +1932,15 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
           refreshToken: token.refreshToken
         });
         if (refreshed?.access_token) {
+          const nextRefreshToken = refreshed.refresh_token ?? token.refreshToken;
           await client.authenticate({
             clientId,
-            accessToken: refreshed.access_token
+            accessToken: refreshed.access_token,
+            refreshToken: nextRefreshToken
           });
           this.persistToken(clientId, {
             accessToken: refreshed.access_token,
-            refreshToken: refreshed.refresh_token ?? token.refreshToken
+            refreshToken: nextRefreshToken
           });
           return true;
         }
@@ -2107,7 +2111,6 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
   }
   render() {
     const {
-      container,
       host,
       disconnectedView,
       participantsView,
@@ -2117,15 +2120,11 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
       loaderIcon,
       discordIcon
     } = this.dom;
-    if (!container || !host || !disconnectedView || !participantsView || !message || !loginButton) {
+    if (!host || !disconnectedView || !participantsView || !message || !loginButton) {
       return;
     }
     const state = this.state();
     const hasParticipants = this.participants.length > 0;
-    const hidden = this.shouldAutoHide();
-    container.hidden = hidden;
-    container.style.display = hidden ? "none" : "";
-    this.ctx.mount.style.display = hidden ? "none" : "";
     host.className = `discord-ipc align-${this.config("alignment", "top-left")}`;
     disconnectedView.hidden = hasParticipants;
     disconnectedView.style.display = hasParticipants ? "none" : "";
@@ -2371,6 +2370,12 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
     }
     return "";
   }
+  shadowsEnabled() {
+    return Boolean(this.config("shadow", false));
+  }
+  showWidget() {
+    return !this.shouldAutoHide();
+  }
   showNames() {
     return Boolean(this.config("showNames", true));
   }
@@ -2488,9 +2493,10 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
     if (!accessToken) {
       return;
     }
+    const storedRefreshToken = this.readStoredToken(clientId)?.refreshToken;
     this.persistToken(clientId, {
       accessToken,
-      refreshToken: readString(client.refreshToken) || void 0
+      refreshToken: readString(client.refreshToken) || storedRefreshToken
     });
   }
   persistToken(clientId, token) {
@@ -2504,7 +2510,7 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
       return false;
     }
     const message = error.message.toLowerCase();
-    return message.includes("invalid oauth2 access token") || message.includes("authentication failed") || message.includes("invalid_grant") || message.includes("401");
+    return message.includes("invalid access token") || message.includes("invalid oauth2 access token") || message.includes("authentication failed") || message.includes("invalid_grant") || message.includes("401");
   }
   async isDiscordRunning() {
     const checks = await Promise.all(
@@ -2532,8 +2538,8 @@ let DisplayDuckWidget$1 = class DisplayDuckWidget {
     return tokens.slice(0, 2).map((token) => token[0]?.toUpperCase() ?? "").join("") || "?";
   }
 };
-const template = '<div class="discord-ipc-wrapper" data-role="discord-root" data-assets-base="{{ASSETS}}">\n  <div class="discord-ipc" data-role="discord-host">\n    <div class="participants-view" data-role="participants-view">\n      <div class="participants" data-role="participants-list"></div>\n      <template id="participant-template">\n        <div class="participant" data-participant-id="">\n          <div class="avatar">\n            <img alt="" loading="lazy" decoding="async" hidden />\n            <div class="avatar-fallback"></div>\n            <div class="mute">\n              <img src="{{ASSETS}}/img/deafened.png" class="invert" alt="" data-role="deaf-icon" hidden />\n              <img src="{{ASSETS}}/img/mic-selfmuted.png" class="invert" alt="" data-role="self-mute-icon" hidden />\n              <img src="{{ASSETS}}/img/mic-servermuted.png" alt="" data-role="server-mute-icon" hidden />\n              <img src="{{ASSETS}}/img/mic-muted.png" class="invert" alt="" data-role="user-mute-icon" hidden />\n            </div>\n          </div>\n          <div class="name-wrapper">\n            <div class="name"></div>\n          </div>\n        </div>\n      </template>\n    </div>\n\n    <div class="disconnected-view" data-role="disconnected-view" hidden>\n      <div class="icon" data-role="icon">\n        <img src="{{ASSETS}}/img/loader.gif" alt="Loading" data-role="loader-icon" hidden />\n        <img src="{{ASSETS}}/img/discord.png" class="invert" alt="Discord" data-role="discord-icon" />\n      </div>\n      <div class="message" data-role="message"></div>\n      <button id="login-btn" type="button" class="connect-button">Authorize Discord</button>\n    </div>\n  </div>\n</div>\n';
-const styles = "img.invert {\n  --filters: invert(100%) ;\n}\n\n.discord-ipc-wrapper {\n  display: flex;\n  flex-direction: column;\n  width: 100%;\n  height: 100%;\n  overflow: hidden;\n}\n\n.discord-ipc {\n  display: flex;\n  width: 100%;\n  height: 100%;\n  flex-direction: column;\n}\n.discord-ipc.align-bottom-left .participants {\n  justify-content: flex-start;\n  align-items: flex-end;\n}\n.discord-ipc.align-bottom-right .participants {\n  justify-content: flex-end;\n  align-items: flex-end;\n}\n.discord-ipc.align-top-left .participants {\n  justify-content: flex-start;\n  align-items: flex-start;\n}\n.discord-ipc.align-top-right .participants {\n  justify-content: flex-end;\n  align-items: flex-start;\n}\n\n.participants-view {\n  width: 100%;\n  height: 100%;\n}\n\n.participants {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  flex-wrap: wrap;\n  flex-direction: row;\n  height: 100%;\n  width: 100%;\n  gap: 0.5em;\n}\n\n.participant {\n  position: relative;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  overflow: hidden;\n  aspect-ratio: 1/1;\n  transform: scale(0.7);\n  opacity: 0;\n  animation: popIn var(--transition) forwards;\n  animation-delay: var(--animation-delay);\n  width: var(--cell-width);\n  height: var(--cell-height);\n}\n.participant.muted .avatar > img {\n  filter: grayscale(100%) brightness(50%);\n}\n.participant.muted .avatar .mute {\n  display: flex;\n  opacity: 1;\n  visibility: visible;\n  padding: 0.5em;\n}\n.participant.muted .avatar .mute img {\n  flex: 1 1 25%;\n  max-width: 100%;\n  filter: var(--filters) drop-shadow(1px 1px 0.25em rgba(0, 0, 0, 0.5));\n}\n\n.avatar {\n  position: relative;\n  width: min(var(--cell-width) * 0.75, var(--cell-height) * 0.75);\n  height: auto;\n  aspect-ratio: 1/1;\n  max-width: 75%;\n  max-height: 75%;\n  flex: 0 0 auto;\n  background: rgba(255, 255, 255, 0.12);\n  border: max(0.15em, 5px) solid transparent;\n  border-radius: 0.25em;\n  transition: border-color var(--transition);\n}\n.avatar > img {\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  display: block;\n  border-radius: 0.25em;\n  transition: filter var(--transition);\n}\n.avatar.speaking {\n  border-color: rgb(112, 224, 112);\n}\n\n.avatar-fallback {\n  position: absolute;\n  inset: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 0.7em;\n  font-weight: 700;\n  letter-spacing: 0.04em;\n  color: rgba(255, 255, 255, 0.9);\n}\n\n.mute {\n  display: flex;\n  position: absolute;\n  inset: 0;\n  font-size: calc(var(--host-width) / 15);\n  justify-content: center;\n  align-items: center;\n  opacity: 0;\n  visibility: hidden;\n  transition: opacity var(--transition), visibility var(--transition);\n}\n\n.name-wrapper {\n  left: 0;\n  bottom: 0;\n  max-height: 25%;\n  font-size: clamp(8px, 4.5cqw, 22px);\n  width: 100%;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  padding: 0 0.15em;\n}\n\n.name {\n  display: block;\n  padding: 0 0.25em;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  text-align: center;\n}\n\n.disconnected-view {\n  width: 100%;\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n  text-align: center;\n  gap: 0.65em;\n}\n\n.icon img {\n  width: 3em;\n  filter: var(--filters);\n}\n\n.message {\n  text-transform: uppercase;\n  line-height: 1.3;\n}\n\n.connect-button {\n  border: 0;\n  border-radius: 0.35em;\n  padding: 0.35em 0.6em;\n  background: rgba(255, 255, 255, 0.18);\n  color: inherit;\n  font-size: 1.2em;\n  text-transform: uppercase;\n  transition: opacity var(--transition);\n}\n\n@keyframes popIn {\n  0% {\n    transform: scale(0.7);\n    opacity: 0;\n  }\n  100% {\n    transform: scale(1);\n    opacity: 1;\n  }\n}";
+const template = '{{#if showWidget()}}\n  <div class="discord-ipc-wrapper {{#if shadowsEnabled()}}shadows{{/if}}" data-role="discord-root" data-assets-base="{{ASSETS}}">\n    <div class="discord-ipc" data-role="discord-host">\n      <div class="participants-view" data-role="participants-view">\n        <div class="participants" data-role="participants-list"></div>\n        <template id="participant-template">\n          <div class="participant" data-participant-id="">\n            <div class="avatar">\n              <img alt="" loading="lazy" decoding="async" hidden />\n              <div class="avatar-fallback"></div>\n              <div class="mute">\n                <img src="{{ASSETS}}/img/deafened.png" class="invert" alt="" data-role="deaf-icon" hidden />\n                <img src="{{ASSETS}}/img/mic-selfmuted.png" class="invert" alt="" data-role="self-mute-icon" hidden />\n                <img src="{{ASSETS}}/img/mic-servermuted.png" alt="" data-role="server-mute-icon" hidden />\n                <img src="{{ASSETS}}/img/mic-muted.png" class="invert" alt="" data-role="user-mute-icon" hidden />\n              </div>\n            </div>\n            <div class="name-wrapper">\n              <div class="name"></div>\n            </div>\n          </div>\n        </template>\n      </div>\n\n      <div class="disconnected-view" data-role="disconnected-view" hidden>\n        <div class="icon" data-role="icon">\n          <img src="{{ASSETS}}/img/loader.gif" alt="Loading" data-role="loader-icon" hidden />\n          <img src="{{ASSETS}}/img/discord.png" class="invert" alt="Discord" data-role="discord-icon" />\n        </div>\n        <div class="message" data-role="message"></div>\n        <button id="login-btn" type="button" class="connect-button">Authorize Discord</button>\n      </div>\n    </div>\n  </div>\n{{/if}}\n';
+const styles = "img.invert {\n  --filters: invert(100%) ;\n}\n\n.discord-ipc-wrapper {\n  display: flex;\n  flex-direction: column;\n  width: 100%;\n  height: 100%;\n  overflow: hidden;\n}\n.discord-ipc-wrapper.shadows {\n  filter: drop-shadow(-1px 1px 1px #000000);\n}\n\n.discord-ipc {\n  display: flex;\n  width: 100%;\n  height: 100%;\n  flex-direction: column;\n}\n.discord-ipc.align-top-left .participants {\n  justify-content: flex-start;\n  align-items: flex-start;\n}\n.discord-ipc.align-top-center .participants {\n  justify-content: center;\n  align-items: flex-start;\n}\n.discord-ipc.align-top-right .participants {\n  justify-content: flex-end;\n  align-items: flex-start;\n}\n.discord-ipc.align-center-left .participants {\n  justify-content: flex-start;\n  align-items: center;\n}\n.discord-ipc.align-center-center .participants {\n  justify-content: center;\n  align-items: center;\n}\n.discord-ipc.align-center-right .participants {\n  justify-content: flex-end;\n  align-items: center;\n}\n.discord-ipc.align-bottom-left .participants {\n  justify-content: flex-start;\n  align-items: flex-end;\n}\n.discord-ipc.align-bottom-center .participants {\n  justify-content: center;\n  align-items: flex-end;\n}\n.discord-ipc.align-bottom-right .participants {\n  justify-content: flex-end;\n  align-items: flex-end;\n}\n\n.participants-view {\n  width: 100%;\n  height: 100%;\n}\n\n.participants {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  flex-wrap: wrap;\n  flex-direction: row;\n  height: 100%;\n  width: 100%;\n  gap: 0.5em;\n}\n\n.participant {\n  position: relative;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  overflow: hidden;\n  aspect-ratio: 1/1;\n  transform: scale(0.7);\n  opacity: 0;\n  animation: popIn var(--transition) forwards;\n  animation-delay: var(--animation-delay);\n  width: var(--cell-width);\n  height: var(--cell-height);\n}\n.participant.muted .avatar > img {\n  filter: grayscale(100%) brightness(50%);\n}\n.participant.muted .avatar .mute {\n  display: flex;\n  opacity: 1;\n  visibility: visible;\n  padding: 0.5em;\n}\n.participant.muted .avatar .mute img {\n  flex: 1 1 25%;\n  max-width: 100%;\n  filter: var(--filters) drop-shadow(1px 1px 0.25em rgba(0, 0, 0, 0.5));\n}\n\n.avatar {\n  position: relative;\n  width: min(var(--cell-width) * 0.75, var(--cell-height) * 0.75);\n  height: auto;\n  aspect-ratio: 1/1;\n  max-width: 75%;\n  max-height: 75%;\n  flex: 0 0 auto;\n  background: rgba(255, 255, 255, 0.12);\n  border: max(0.15em, 5px) solid transparent;\n  border-radius: 0.25em;\n  transition: border-color var(--transition);\n}\n.avatar > img {\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  display: block;\n  border-radius: 0.25em;\n  transition: filter var(--transition);\n}\n.avatar.speaking {\n  border-color: rgb(112, 224, 112);\n}\n\n.avatar-fallback {\n  position: absolute;\n  inset: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 0.7em;\n  font-weight: 700;\n  letter-spacing: 0.04em;\n  color: rgba(255, 255, 255, 0.9);\n}\n\n.mute {\n  display: flex;\n  position: absolute;\n  inset: 0;\n  font-size: calc(var(--host-width) / 15);\n  justify-content: center;\n  align-items: center;\n  opacity: 0;\n  visibility: hidden;\n  transition: opacity var(--transition), visibility var(--transition);\n}\n\n.name-wrapper {\n  left: 0;\n  bottom: 0;\n  max-height: 25%;\n  font-size: clamp(8px, 4.5cqw, 22px);\n  width: 100%;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  padding: 0 0.15em;\n}\n\n.name {\n  display: block;\n  padding: 0 0.25em;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  text-align: center;\n}\n\n.disconnected-view {\n  width: 100%;\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n  text-align: center;\n  gap: 0.65em;\n}\n\n.icon img {\n  width: 3em;\n  filter: var(--filters);\n}\n\n.message {\n  text-transform: uppercase;\n  line-height: 1.3;\n}\n\n.connect-button {\n  border: 0;\n  border-radius: 0.35em;\n  padding: 0.35em 0.6em;\n  background: rgba(255, 255, 255, 0.18);\n  color: inherit;\n  font-size: 1.2em;\n  text-transform: uppercase;\n  transition: opacity var(--transition);\n}\n\n@keyframes popIn {\n  0% {\n    transform: scale(0.7);\n    opacity: 0;\n  }\n  100% {\n    transform: scale(1);\n    opacity: 1;\n  }\n}";
 const DisplayDuckWidget2 = createWidgetClass(DisplayDuckWidget$1, { template, styles });
 const Widget = DisplayDuckWidget2;
 const displayduckPackDiscordIpc_discordIpc_entry = { DisplayDuckWidget: DisplayDuckWidget2, Widget };

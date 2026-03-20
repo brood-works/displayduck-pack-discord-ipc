@@ -103,6 +103,7 @@ export class DisplayDuckWidget {
   }
 
   public afterRender(): void {
+    this.ctx.mount.style.display = '';
     this.cacheDom();
     this.reconcileParticipants();
     this.render();
@@ -334,6 +335,7 @@ export class DisplayDuckWidget {
       await client.authenticate({
         clientId,
         accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
       });
       this.persistClientTokens(clientId, client);
       return true;
@@ -352,13 +354,15 @@ export class DisplayDuckWidget {
         });
 
         if (refreshed?.access_token) {
+          const nextRefreshToken = refreshed.refresh_token ?? token.refreshToken;
           await client.authenticate({
             clientId,
             accessToken: refreshed.access_token,
+            refreshToken: nextRefreshToken,
           });
           this.persistToken(clientId, {
             accessToken: refreshed.access_token,
-            refreshToken: refreshed.refresh_token ?? token.refreshToken,
+            refreshToken: nextRefreshToken,
           });
           return true;
         }
@@ -583,7 +587,6 @@ export class DisplayDuckWidget {
 
   private render(): void {
     const {
-      container,
       host,
       disconnectedView,
       participantsView,
@@ -593,17 +596,12 @@ export class DisplayDuckWidget {
       loaderIcon,
       discordIcon,
     } = this.dom;
-    if (!container || !host || !disconnectedView || !participantsView || !message || !loginButton) {
+    if (!host || !disconnectedView || !participantsView || !message || !loginButton) {
       return;
     }
 
     const state = this.state();
     const hasParticipants = this.participants.length > 0;
-    const hidden = this.shouldAutoHide();
-
-    container.hidden = hidden;
-    container.style.display = hidden ? 'none' : '';
-    this.ctx.mount.style.display = hidden ? 'none' : '';
     host.className = `discord-ipc align-${this.config('alignment', 'top-left')}`;
 
     disconnectedView.hidden = hasParticipants;
@@ -901,6 +899,14 @@ export class DisplayDuckWidget {
     return '';
   }
 
+  public shadowsEnabled(): boolean {
+    return Boolean(this.config('shadow', false));
+  }
+
+  public showWidget(): boolean {
+    return !this.shouldAutoHide();
+  }
+
   private showNames(): boolean {
     return Boolean(this.config('showNames', true));
   }
@@ -1063,9 +1069,11 @@ export class DisplayDuckWidget {
       return;
     }
 
+    const storedRefreshToken = this.readStoredToken(clientId)?.refreshToken;
+
     this.persistToken(clientId, {
       accessToken,
-      refreshToken: readString(client.refreshToken) || undefined,
+      refreshToken: readString(client.refreshToken) || storedRefreshToken,
     });
   }
 
@@ -1083,6 +1091,7 @@ export class DisplayDuckWidget {
     }
     const message = error.message.toLowerCase();
     return (
+      message.includes('invalid access token') ||
       message.includes('invalid oauth2 access token') ||
       message.includes('authentication failed') ||
       message.includes('invalid_grant') ||

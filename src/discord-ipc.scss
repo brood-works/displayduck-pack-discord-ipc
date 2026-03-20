@@ -10,6 +10,10 @@ img {
   width: 100%;
   height: 100%;
   overflow: hidden;
+
+  &.shadows {
+    filter: drop-shadow(-1px 1px 1px #000000);
+  }
 }
 
 .discord-ipc {
@@ -18,23 +22,16 @@ img {
   height: 100%;
   flex-direction: column;
 
-  &.align-bottom-left {
-    .participants {
-      justify-content: flex-start;
-      align-items: flex-end;
-    }
-  }
-
-  &.align-bottom-right {
-    .participants {
-      justify-content: flex-end;
-      align-items: flex-end;
-    }
-  }
-
   &.align-top-left {
     .participants {
       justify-content: flex-start;
+      align-items: flex-start;
+    }
+  }
+
+  &.align-top-center {
+    .participants {
+      justify-content: center;
       align-items: flex-start;
     }
   }
@@ -43,6 +40,48 @@ img {
     .participants {
       justify-content: flex-end;
       align-items: flex-start;
+    }
+  }
+
+  &.align-center-left {
+    .participants {
+      justify-content: flex-start;
+      align-items: center;
+    }
+  }
+
+  &.align-center-center {
+    .participants {
+      justify-content: center;
+      align-items: center;
+    }
+  }
+
+  &.align-center-right {
+    .participants {
+      justify-content: flex-end;
+      align-items: center;
+    }
+  }
+
+  &.align-bottom-left {
+    .participants {
+      justify-content: flex-start;
+      align-items: flex-end;
+    }
+  }
+
+  &.align-bottom-center {
+    .participants {
+      justify-content: center;
+      align-items: flex-end;
+    }
+  }
+
+  &.align-bottom-right {
+    .participants {
+      justify-content: flex-end;
+      align-items: flex-end;
     }
   }
 }
